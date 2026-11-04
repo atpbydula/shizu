@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { animate, stagger } from 'animejs'
 import { Send } from 'lucide-react'
 import Spirit, { MOODS } from './Spirit'
-import { Chars, reduced, useInView, useReveal, useMagnetic, useScrub } from './lib'
+import { Chars, reduced, useInView, useReveal, useMagnetic } from './lib'
 
 const HS = [
   { t: 'Soil moisture', x: 36, y: 26, d: 'A capacitive soil-moisture sensor reads moisture at the roots, so watering reminders come from the soil itself.' },
@@ -14,7 +14,6 @@ const HS = [
 ]
 export function Meet() {
   const r = useReveal(), p = useRef(), [i, setI] = useState(2)
-  useScrub(r, '.m-box', { rotate: [-3, 3] }); useScrub(r, '.m-k', { rotate: [-12, 12], scale: [.9, 1.15] })
   useEffect(() => {
     if (reduced()) return
     const a = animate(p.current, { opacity: [0, 1], translateY: [16, 0], duration: 700, ease: 'outExpo' })
@@ -72,10 +71,10 @@ function Viz({ n }) {
   )
 }
 function Row({ n, t, d }) {
-  const r = useReveal(); useScrub(r, '.cap-n', { translateX: [-50, 50] })
+  const r = useReveal()
   return (
     <article className={'cap' + (n % 2 ? ' alt' : '')} ref={r}>
-      <div data-rv="zoom"><div className="cap-n" aria-hidden="true">0{n + 1}</div></div>
+      <div className="cap-n" data-rv="zoom" aria-hidden="true">0{n + 1}</div>
       <div><h3 data-rv="left">{t}</h3><p data-rv="up">{d}</p></div>
       <div data-rv="right"><Viz n={n} /></div>
     </article>
@@ -136,7 +135,6 @@ function Seeds({ n, fresh }) {
 
 export function Wishlist() {
   const r = useReveal(), lr = useRef(), btn = useMagnetic(), t0 = useRef(Date.now())
-  useScrub(r, '.wl-k', { rotate: [-8, 8] })
   const [st, setSt] = useState('idle'), [msg, setMsg] = useState(''), [who, setWho] = useState('')
   const [count, setCount] = useState(null), [shown, setShown] = useState(0), [fresh, setFresh] = useState(false), [seen, setSeen] = useState(false)
   useInView(lr, () => { setSeen(true) }, .3)
@@ -149,7 +147,7 @@ export function Wishlist() {
   }, [count, seen])
   useEffect(() => { // plant the sprouts (or just the newest one)
     if (!seen || count == null || count < 1 || reduced()) return
-    const a = animate(fresh ? '.sd.new' : '.sd.p', { opacity: [0, 1], scale: [.3, 1], delay: fresh ? 0 : stagger(35, { grid: [12, Math.ceil(Math.min(count, 96) / 12)], from: 'center' }), duration: 900, ease: 'outExpo' })
+    const a = animate(fresh ? '.sd.new' : '.sd.p', { opacity: [0, 1], scale: [.3, 1], delay: stagger(fresh ? 0 : 20), duration: 900, ease: 'outExpo' })
     return () => a.revert()
   }, [count, seen])
   useEffect(() => {

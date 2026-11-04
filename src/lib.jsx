@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef } from 'react'
-import { animate, stagger, onScroll } from 'animejs'
+import { animate, stagger } from 'animejs'
 
 export const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 export const fine = () => matchMedia('(pointer:fine)').matches
@@ -70,14 +70,4 @@ export function Fern({ className, flip, n = 11, ...p }) {
       </g>
     </svg>
   )
-}
-
-// Scroll-scrubbed motion: the animation's progress IS the element's pass through the viewport.
-export function useScrub(ref, sel, props) {
-  useEffect(() => {
-    if (reduced() || !ref.current) return
-    const t = ref.current.querySelector(sel); if (!t) return
-    const a = animate(t, { ...props, ease: 'linear', autoplay: onScroll({ target: ref.current, enter: 'top bottom', leave: 'bottom top', sync: true }) })
-    return () => a.revert()
-  }, [])
 }
