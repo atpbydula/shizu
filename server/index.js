@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import rateLimit from 'express-rate-limit'
+import Database from 'better-sqlite3'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -12,9 +13,8 @@ const dbFile = process.env.DATABASE_PATH || path.join(__dirname, 'data', 'shizu.
 let db = null
 try {
   fs.mkdirSync(path.dirname(dbFile), { recursive: true })
-  const { DatabaseSync } = await import('node:sqlite') // built in, Node 22.13+
-  db = new DatabaseSync(dbFile)
-  db.exec('PRAGMA journal_mode = WAL')
+  db = new Database(dbFile)
+  db.pragma('journal_mode = WAL')
   db.exec(`CREATE TABLE IF NOT EXISTS wishlist(
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
     reason TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
@@ -23,7 +23,6 @@ try {
   console.error('[shizu] Database unavailable. Submissions will be rejected, not simulated.', e.message)
 }
 
-const total = () => (db ? Number(db.prepare('SELECT COUNT(*) n FROM wishlist').get().n) : null)
 const app = express()
 app.disable('x-powered-by')
 app.set('trust proxy', 1)
@@ -44,17 +43,11 @@ app.post('/api/wishlist', limiter, (req, res) => {
   if (!db) return res.status(503).json({ error: 'The wishlist is unavailable right now. Nothing was saved.' })
   try {
     db.prepare('INSERT INTO wishlist(name,email,reason) VALUES(?,?,?)').run(name, email, reason || null)
-    res.status(201).json({ ok: true, count: total() })
+    res.status(201).json({ ok: true })
   } catch (e) {
-    if (/UNIQUE constraint/i.test(String(e.message))) return res.status(409).json({ error: 'This email is already on the list.' })
+    if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'This email is already on the list.' })
     console.error(e); res.status(500).json({ error: 'Something went wrong. Please try again.' })
   }
-})
-
-app.get('/api/wishlist/count', (q, res) => {
-  res.set('Cache-Control', 'no-store')
-  const n = total()
-  n === null ? res.status(503).json({ error: 'Count unavailable.' }) : res.json({ count: n })
 })
 
 if (process.env.NODE_ENV === 'production') {

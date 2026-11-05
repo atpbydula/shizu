@@ -1,6 +1,6 @@
 # SHIZU 静 — immersive landing page
 
-React + Vite, Anime.js v4, Node/Express, SQLite (Node built-in `node:sqlite`, Node 22.13+).
+React + Vite, Anime.js v4, Node/Express, SQLite (better-sqlite3).
 
 ## Run
 ```bash
@@ -21,5 +21,3 @@ If the database cannot open, the API returns 503 and saves nothing. View entries
 `src/App.jsx` intro, hero, story, closing · `src/Sections.jsx` meet, capabilities, companion, wishlist.
 
 Reduced motion: respected (static final states, no parallax, no intro). Sensor values and the signal trace are labelled illustrative.
-
-`GET /api/wishlist/count` returns the real number of signups; the site shows it live (starts at 0).

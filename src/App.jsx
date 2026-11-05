@@ -5,41 +5,22 @@ import Spirit from './Spirit'
 import { Chars, Fern, reduced, fine, useInView, useReveal, useFloat, useMagnetic } from './lib'
 import { Meet, Caps, Companion, Wishlist } from './Sections'
 
-function Particles() { // drifting fireflies
+function Particles() {
   const r = useRef()
   useEffect(() => {
     const c = r.current, x = c.getContext('2d'); let w, h, id
-    const P = Array.from({ length: innerWidth < 700 ? 22 : 46 }, () => ({ x: Math.random(), y: Math.random(), s: Math.random() * 2.2 + 1, v: Math.random() * 6e-5 + 1.5e-5, o: Math.random() * 6.3, k: Math.random() < .3 ? '217,166,166' : '135,150,106' }))
+    const P = Array.from({ length: innerWidth < 700 ? 30 : 70 }, () => ({ x: Math.random(), y: Math.random(), s: Math.random() * 1.4 + .3, v: Math.random() * 8e-5 + 2e-5, c: Math.random() < .12 ? '#F20D42' : '#EDE6D8' }))
     const fit = () => { w = c.width = innerWidth; h = c.height = innerHeight }
     fit(); addEventListener('resize', fit)
-    const draw = t => {
+    const draw = () => {
       x.clearRect(0, 0, w, h)
-      P.forEach(p => {
-        if (!reduced()) { p.y -= p.v; p.x += Math.sin(t / 2500 + p.o) * 1.2e-4 }
-        if (p.y < -.02) p.y = 1.02
-        const a = .3 + .6 * Math.abs(Math.sin(t / 1400 + p.o)), px = p.x * w, py = p.y * h, g = x.createRadialGradient(px, py, 0, px, py, p.s * 7)
-        g.addColorStop(0, `rgba(${p.k},${a})`); g.addColorStop(1, `rgba(${p.k},0)`)
-        x.fillStyle = g; x.beginPath(); x.arc(px, py, p.s * 7, 0, 6.3); x.fill()
-      })
+      P.forEach(p => { if (!reduced()) p.y -= p.v; if (p.y < 0) p.y = 1; x.globalAlpha = .25 + .5 * Math.abs(Math.sin(p.x * 9 + p.y * 20)); x.fillStyle = p.c; x.fillRect(p.x * w, p.y * h, p.s, p.s) })
       id = requestAnimationFrame(draw)
     }
-    id = requestAnimationFrame(draw)
+    draw()
     return () => { cancelAnimationFrame(id); removeEventListener('resize', fit) }
   }, [])
   return <canvas ref={r} className="parts" aria-hidden="true" />
-}
-
-function Vine() { // a stem that grows as you read
-  const r = useRef()
-  useEffect(() => {
-    if (reduced()) return
-    let id = 0
-    const f = () => { id = 0; r.current.style.transform = `scaleY(${Math.min(1, Math.max(0, scrollY / ((document.documentElement.scrollHeight - innerHeight) || 1)))})` }
-    const on = () => { if (!id) id = requestAnimationFrame(f) }
-    addEventListener('scroll', on, { passive: true }); on()
-    return () => removeEventListener('scroll', on)
-  }, [])
-  return <div className="vine" aria-hidden="true"><i ref={r} /></div>
 }
 
 function Cursor() {
@@ -56,40 +37,29 @@ function Cursor() {
   return <div ref={r} className="cursor" aria-hidden="true"><i>静</i></div>
 }
 
-const MSG = ['Take a breath', 'Something is stirring', 'Listening', 'Hello']
+const MSG = ['INITIALISING', 'READING THE SOIL', 'LISTENING', 'AWAKENING']
 function Intro({ onGo, onDone }) {
   const r = useRef(), [n, setN] = useState(0)
   useEffect(() => {
     const o = { v: 0 }
-    const halo = animate('.in-h', { scale: [.8, 1.15], opacity: [.35, .8], duration: 2200, alternate: true, loop: true, ease: 'inOutSine' })
     const tl = createTimeline({ onComplete: onDone })
     tl.add('.in-k', { opacity: [0, 1], scale: [.5, 1], duration: 1400, ease: 'outExpo' })
       .add(o, { v: 100, duration: 2000, ease: 'inOutQuad', onUpdate: () => setN(Math.round(o.v)) }, '-=700')
       .call(onGo, '+=100')
       .add('.in-k', { scale: [1, 34], opacity: [1, 0], duration: 1800, ease: 'inExpo' })
       .add(r.current, { opacity: [1, 0], duration: 700, ease: 'linear' }, '-=700')
-    return () => { tl.revert(); halo.revert() }
+    return () => tl.revert()
   }, [])
   return (
     <div className="intro" ref={r} role="status" aria-label="Loading">
-      <div className="in-h" aria-hidden="true" /><div className="in-k jp">静</div>
+      <div className="in-k jp">静</div>
       <div className="in-m mono">{String(n).padStart(3, '0')} / {MSG[Math.min(3, (n / 26) | 0)]}</div>
     </div>
   )
 }
 
 function Hero({ go }) {
-  const r = useRef(), [mood, setMood] = useState('happy'); useFloat(r)
-  const hello = e => { // tap SHIZU: it lights up and scatters petals
-    setMood('excited'); setTimeout(() => setMood('happy'), 1800)
-    if (reduced()) return
-    const host = e.currentTarget
-    for (let i = 0; i < 14; i++) {
-      const p = document.createElement('i'); p.className = 'petal'; host.appendChild(p)
-      const a = Math.random() * 6.28, d = 120 + Math.random() * 180
-      animate(p, { translateX: [0, Math.cos(a) * d], translateY: [0, Math.sin(a) * d - 80], rotate: [0, Math.random() * 360], opacity: [1, 0], scale: [1, .4], duration: 2200 + Math.random() * 1200, ease: 'outQuart', onComplete: () => p.remove() })
-    }
-  }
+  const r = useRef(); useFloat(r)
   useEffect(() => { // mouse parallax (transform only, rAF-lerped)
     if (reduced() || !fine()) return
     const L = [...r.current.querySelectorAll('[data-d]')]; let tx = 0, ty = 0, x = 0, y = 0, id
@@ -111,22 +81,20 @@ function Hero({ go }) {
       .add('.h-subject', { opacity: [0, 1], scale: [.55, 1], rotate: [-9, 0], duration: 2200 }, '-=1900')
       .add('.hero .fern', { opacity: [0, .85], duration: 2000 }, '-=1500')
       .add('[data-meta]', { opacity: [0, 1], translateY: [14, 0], delay: stagger(90), duration: 1000 }, '-=1300')
-    const scan = animate('.scan', { translateY: [0, innerHeight], duration: 9000, loop: true, ease: 'linear' })
-    const glow = animate('.glow', { scale: [.9, 1.12], opacity: [.7, 1], duration: 3600, alternate: true, loop: true, ease: 'inOutSine' })
-    return () => { tl.revert(); scan.revert(); glow.revert() }
+    const scan = animate('.scan', { translateY: [0, innerHeight], duration: 6000, loop: true, ease: 'linear' })
+    return () => { tl.revert(); scan.revert() }
   }, [go])
   return (
-    <section className="hero" id="top" ref={r} data-bg="#F2EBDD" aria-label="SHIZU">
+    <section className="hero" id="top" ref={r} data-bg="#080A0B" aria-label="SHIZU">
       <div className="h-stage">
         <i className="scan" aria-hidden="true" />
         <div className="layer" data-d="-14"><div className="h-kanji" data-in aria-hidden="true">静</div></div>
         <div className="layer" data-d="12"><Fern className="fern f1" data-float data-in /><Fern className="fern f2" flip data-float data-in /></div>
         <div className="layer" data-d="22"><h1 className="h-title" aria-label="SHIZU">{[...'SHIZU'].map((c, i) => <span className="hl" key={i} aria-hidden="true"><span data-in>{c}</span></span>)}</h1></div>
-        <div className="layer" data-d="-32"><div className="glow" aria-hidden="true" /><button className="h-subject" data-in onPointerEnter={() => setMood('curious')} onPointerLeave={() => setMood('happy')} onClick={hello} aria-label="Say hello to SHIZU"><Spirit mood={mood} /></button></div>
+        <div className="layer" data-d="-32"><div className="h-subject" data-in><Spirit /></div></div>
         <div className="meta tl" data-meta data-in><b className="jp">静</b><span className="mono">SHIZU<br />Bio-integrated plant companion</span></div>
         <div className="meta tr mono" data-meta data-in>N 35°01′ / E 135°46′<br />System 01 · awake</div>
         <div className="meta vt jp" data-meta data-in>静かな精霊</div>
-        <div className="meta hint mono" data-meta data-in>Tap SHIZU to say hello</div>
         <div className="meta bl" data-meta data-in><p className="tag">A Little Spirit.<br />A Living Connection.</p></div>
         <div className="meta br mono" data-meta data-in>Where technology learns to listen to nature.<span className="bar" /></div>
       </div>
@@ -134,50 +102,21 @@ function Hero({ go }) {
   )
 }
 
-function Act({ cls = '', children }) { const r = useReveal(); return <div className={'act ' + cls} ref={r}>{children}</div> }
 function Story() {
-  const r = useRef()
-  useEffect(() => { // the 静 behind the story swells as you scroll
-    if (reduced()) return
-    const a = animate(r.current.querySelector('.bgk'), { scale: [.85, 1.6], translateY: ['0vh', '-12vh'], ease: 'linear', autoplay: onScroll({ target: r.current, enter: 'top bottom', leave: 'bottom top', sync: true }) })
-    return () => a.revert()
-  }, [])
+  const r = useReveal()
   return (
-    <section id="story" className="story" data-bg="#E9E5D0" ref={r}>
-      <div className="bgk" aria-hidden="true">静</div>
-      <Fern className="fern sf" />
-      <h2 className="mono">The Story</h2>
-      <Act>
-        <p className="lead"><Chars text="Long ago, in a quiet garden hidden beneath the branches of an ancient tree, there lived a little spirit named Shizu." /></p>
-        <p data-rv="up">Shizu was said to exist wherever nature was cared for and remembered. It could not speak like humans, nor could it ask for help. It simply existed alongside the plants, observing the changing seasons, the warmth of sunlight, the falling rain and the passage of time.</p>
-      </Act>
-      <Act cls="r">
-        <p className="lead dim"><Chars text="As the years passed, the garden was forgotten." /></p>
-        <p data-rv="up">Its trees grew weaker, its flowers disappeared, and Shizu slowly fell into a deep sleep.</p>
-      </Act>
-      <Act>
-        <p className="name"><Chars text="Until one day, someone planted a new seed." /></p>
-        <p data-rv="up">Through that small act of care, Shizu awakened.</p>
-      </Act>
-      <Act cls="r">
-        <p className="lead"><Chars text="But this time, Shizu found itself in a different world — a world of technology, connected devices and people whose days moved faster than the seasons." /></p>
-        <p data-rv="up">With the help of a new companion, Shizu could once again understand its surroundings, remember the moments it experienced and grow alongside the plant it was entrusted to protect.</p>
-        <p className="name"><Chars text="And so, a new little garden began." /></p>
-      </Act>
-      <p className="mono note">SHIZU is an original, folklore-inspired character, influenced by Japanese nature-spirit traditions such as the kodama. It is not an existing legend.</p>
-    </section>
-  )
-}
-
-const NOTE = ['Hello.', 'I can’t speak, so I make small faces instead.', 'When you come back, I’m glad.', 'When you forget, I wait. I’m good at waiting.', 'Thank you for caring for something quiet.']
-function Letter() {
-  const r = useRef()
-  useInView(r, el => { if (!reduced()) return animate(el.querySelectorAll('.ln'), { opacity: [0, 1], translateY: [24, 0], delay: stagger(1000), duration: 2000, ease: 'outQuart' }) }, .3)
-  return (
-    <section className="letter" data-bg="#E3DFC7" ref={r} aria-label="A note from SHIZU">
-      <div className="pen jp" aria-hidden="true">静</div>
-      <p className="mono">A note from SHIZU</p>
-      {NOTE.map((l, i) => <p key={i} className={'ln' + (i ? '' : ' hi')} data-in>{l}</p>)}
+    <section id="story" className="story" data-bg="#101B17" ref={r}>
+      <div className="bgk" aria-hidden="true" data-rv="zoom">静</div>
+      <Fern className="fern sf" data-rv="right" />
+      <h2 className="mono" data-rv="up">The Story</h2>
+      <div className="st-body">
+        <p className="lead"><Chars text="Long before machines learned to understand the world, nature communicated in ways humans rarely noticed." /></p>
+        <p><Chars text="In forgotten gardens, where the wind moved through leaves and time passed quietly, a little spirit waited." /></p>
+        <p className="name"><Chars text="They called it SHIZU." /></p>
+        <p><Chars text="A quiet presence that awakens wherever nature is cared for." /></p>
+        <p><Chars text="Now, through technology, SHIZU finds a new way to observe, remember and grow alongside the living world." /></p>
+        <p className="mono note" data-rv="up">SHIZU is an original, folklore-inspired character, influenced by Japanese nature-spirit traditions such as the kodama. It is not an existing legend.</p>
+      </div>
     </section>
   )
 }
@@ -194,7 +133,7 @@ function Closing() {
   }, .3)
   return (
     <>
-      <section className="close" ref={r} data-bg="#2C3B2B" aria-label="Closing">
+      <section className="close" ref={r} data-bg="#080A0B" aria-label="Closing">
         <Fern className="fern cl-f" data-in />
         <div className="cl-k jp" data-in aria-hidden="true">静</div>
         <p className="cl-t" data-in>SHIZU</p>
@@ -220,13 +159,13 @@ export default function App() {
   }, [])
   return (
     <>
-      <Particles /><Cursor /><Vine />
+      <Particles /><Cursor />
       {!done && <Intro onGo={() => setGo(true)} onDone={() => setDone(true)} />}
       <header className="nav">
         <a href="#top" className="logo"><span className="jp">静</span> SHIZU</a>
         <nav aria-label="Primary"><a href="#story">Story</a><a href="#meet">Meet</a><a href="#beyond">Beyond</a><a href="#companion">Companion</a><a href="#wishlist" className="join">Early access</a></nav>
       </header>
-      <main><Hero go={go} /><Story /><Meet /><Caps /><Companion /><Letter /><Wishlist /><Closing /></main>
+      <main><Hero go={go} /><Story /><Meet /><Caps /><Companion /><Wishlist /><Closing /></main>
     </>
   )
 }

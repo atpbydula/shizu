@@ -61,8 +61,8 @@ export const Chars = ({ text, className }) => (
 export function Fern({ className, flip, n = 11, ...p }) {
   return (
     <svg className={className} viewBox="0 0 200 400" aria-hidden="true" {...p}>
-      <g transform={flip ? 'translate(200 0) scale(-1 1)' : undefined} fill="#87966A">
-        <path d="M100 400Q92 200 100 20" fill="none" stroke="#87966A" strokeWidth="2" />
+      <g transform={flip ? 'translate(200 0) scale(-1 1)' : undefined} fill="#78876A">
+        <path d="M100 400Q92 200 100 20" fill="none" stroke="#78876A" strokeWidth="2" />
         {Array.from({ length: n * 2 }, (_, k) => {
           const i = k >> 1, s = k % 2 ? 1 : -1, t = i / n, x = 100 - 16 * t * (1 - t), y = 385 - t * 350, rx = 34 * (1 - t * .65)
           return <ellipse key={k} cx={x + s * rx * .9} cy={y} rx={rx} ry={rx * .2} transform={`rotate(${s * -28} ${x} ${y})`} opacity={.9 - t * .4} />
