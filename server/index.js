@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import rateLimit from 'express-rate-limit'
-import Database from 'better-sqlite3'
+import { DatabaseSync } from 'node:sqlite'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -13,8 +13,8 @@ const dbFile = process.env.DATABASE_PATH || path.join(__dirname, 'data', 'shizu.
 let db = null
 try {
   fs.mkdirSync(path.dirname(dbFile), { recursive: true })
-  db = new Database(dbFile)
-  db.pragma('journal_mode = WAL')
+  db = new DatabaseSync(dbFile)
+  db.exec('PRAGMA journal_mode = WAL')
   db.exec(`CREATE TABLE IF NOT EXISTS wishlist(
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
     reason TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
@@ -45,7 +45,7 @@ app.post('/api/wishlist', limiter, (req, res) => {
     db.prepare('INSERT INTO wishlist(name,email,reason) VALUES(?,?,?)').run(name, email, reason || null)
     res.status(201).json({ ok: true })
   } catch (e) {
-    if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'This email is already on the list.' })
+    if (/UNIQUE/.test(e.message)) return res.status(409).json({ error: 'This email is already on the list.' })
     console.error(e); res.status(500).json({ error: 'Something went wrong. Please try again.' })
   }
 })

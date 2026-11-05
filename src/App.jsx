@@ -4,6 +4,7 @@ import { ArrowUpRight } from 'lucide-react'
 import Spirit from './Spirit'
 import { Chars, Fern, reduced, fine, useInView, useReveal, useFloat, useMagnetic } from './lib'
 import { Meet, Caps, Companion, Wishlist } from './Sections'
+import { Flow, Features } from './Features'
 
 function Particles() {
   const r = useRef()
@@ -141,7 +142,7 @@ function Closing() {
         <a ref={cta} href="#wishlist" className="send cl-s" data-in>Join the Awakening <ArrowUpRight size={16} aria-hidden="true" /></a>
       </section>
       <footer>
-        <nav aria-label="Footer" className="mono"><a href="#story">Story</a> <a href="#meet">Meet SHIZU</a> <a href="#beyond">Beyond</a> <a href="#companion">Companion</a> <a href="#wishlist">Early access</a></nav>
+        <nav aria-label="Footer" className="mono"><a href="#story">Story</a> <a href="#meet">Meet SHIZU</a> <a href="#beyond">Beyond</a> <a href="#features">Features</a> <a href="#companion">Companion</a> <a href="#wishlist">Early access</a></nav>
         <nav aria-label="Social" className="mono"><a href="#">Instagram</a> <a href="#">YouTube</a> <a href="#">X</a></nav>
         <p className="mono">© 2026 SHIZU. All rights reserved.</p>
       </footer>
@@ -157,15 +158,20 @@ export default function App() {
     document.querySelectorAll('[data-bg]').forEach(s => io.observe(s))
     return () => io.disconnect()
   }, [])
+  useEffect(() => { // scroll progress bar, scrubbed by the page scroll
+    if (reduced()) return
+    const a = animate('.prog', { scaleX: [0, 1], ease: 'linear', autoplay: onScroll({ target: 'main', enter: 'top top', leave: 'bottom bottom', sync: true }) })
+    return () => a.revert()
+  }, [])
   return (
     <>
-      <Particles /><Cursor />
+      <Particles /><Cursor /><i className="prog" aria-hidden="true" />
       {!done && <Intro onGo={() => setGo(true)} onDone={() => setDone(true)} />}
       <header className="nav">
         <a href="#top" className="logo"><span className="jp">静</span> SHIZU</a>
-        <nav aria-label="Primary"><a href="#story">Story</a><a href="#meet">Meet</a><a href="#beyond">Beyond</a><a href="#companion">Companion</a><a href="#wishlist" className="join">Early access</a></nav>
+        <nav aria-label="Primary"><a href="#story">Story</a><a href="#meet">Meet</a><a href="#beyond">Beyond</a><a href="#features">Features</a><a href="#companion">Companion</a><a href="#wishlist" className="join">Early access</a></nav>
       </header>
-      <main><Hero go={go} /><Story /><Meet /><Caps /><Companion /><Wishlist /><Closing /></main>
+      <main><Hero go={go} /><Story /><Meet /><Caps /><Flow /><Features /><Companion /><Wishlist /><Closing /></main>
     </>
   )
 }
